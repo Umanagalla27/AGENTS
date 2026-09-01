@@ -1,0 +1,8 @@
+{
+  "name": "NEXUS AI — Enterprise Intelligent Customer Operations",
+  "description": "Enterprise Intelligent Customer Operations Platform powered by multi-agent AI, knowledge RAG, secure automated workflows, and human-in-the-loop oversight.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
