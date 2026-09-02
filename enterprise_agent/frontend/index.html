@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS AI — Enterprise Intelligent Customer Operations</title>
+  <meta name="description" content="NEXUS AI — Multi-agent AI platform for enterprise customer operations with RAG, HITL oversight, and intelligent automation." />
+  <meta name="theme-color" content="#080c14" />
+
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Fonts: Plus Jakarta Sans + JetBrains Mono -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeMob()"></div>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite" aria-label="Notifications"></div>
+
+<!-- Global loading overlay -->
+<div class="loading-overlay hidden" id="loading-overlay" role="status" aria-busy="true">
+  <div class="loading-ring"></div>
+  <p class="loading-text" id="loading-text">Processing through AI agents…</p>
+  <div class="loading-steps-list" id="loading-steps"></div>
+</div>
+
+<!-- Approval Review Modal -->
+<div class="modal-overlay hidden" id="approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-modal-title">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="approval-modal-title">Review High-Risk Action</div>
+        <div class="modal-sub">This action requires your explicit approval before execution</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeApprovalModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="approval-modal-body"></div>
+    <div class="modal-foot">
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label class="form-label" for="approver-id">Approver ID</label>
+          <input type="text" id="approver-id" class="input" value="supervisor.1" placeholder="e.g. john.doe" />
+        </div>
+        <div class="form-group flex-1">
+          <label class="form-label" for="approver-notes">Notes (optional)</label>
+          <input type="text" id="approver-notes" class="input" placeholder="Add review notes…" />
+        </div>
+      </div>
+      <div class="modal-foot-actions">
+        <button class="btn btn-ghost" onclick="closeApprovalModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="submitApproval(false)">
+          <i data-lucide="x-circle"></i> Reject
+        </button>
+        <button class="btn btn-success" onclick="submitApproval(true)">
+          <i data-lucide="check-circle"></i> Approve
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================================
+     APP SHELL
+============================================================================ -->
+<div id="app">
+
+  <!-- ========================================================================
+       SIDEBAR
+  ======================================================================== -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">NEXUS AI</span>
+        <span class="brand-sub">Enterprise Operations</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav" aria-label="Sections">
+
+      <div class="nav-group-label">Main</div>
+
+      <a class="nav-link active" id="nav-overview"  href="#overview"  onclick="showPanel('overview')"  role="menuitem" aria-current="page">
+        <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
+        <span class="nav-label">Overview</span>
+      </a>
+      <a class="nav-link" id="nav-support"   href="#support"   onclick="showPanel('support')"   role="menuitem">
+        <span class="nav-icon"><i data-lucide="message-square"></i></span>
+        <span class="nav-label">Customer Support</span>
+      </a>
+      <a class="nav-link" id="nav-tickets"   href="#tickets"   onclick="showPanel('tickets')"   role="menuitem">
+        <span class="nav-icon"><i data-lucide="ticket"></i></span>
+        <span class="nav-label">Tickets</span>
+      </a>
+      <a class="nav-link" id="nav-approvals" href="#approvals" onclick="showPanel('approvals')" role="menuitem">
+        <span class="nav-icon"><i data-lucide="shield-check"></i></span>
+        <span class="nav-label">Approvals</span>
+        <span class="nav-badge" id="approval-badge" aria-label="Pending approvals">0</span>
+      </a>
+
+      <div class="nav-group-label">AI System</div>
+
+      <a class="nav-link" id="nav-agents"    href="#agents"    onclick="showPanel('agents')"    role="menuitem">
+        <span class="nav-icon"><i data-lucide="cpu"></i></span>
+        <span class="nav-label">AI Agents</span>
+      </a>
+      <a class="nav-link" id="nav-knowledge" href="#knowledge" onclick="showPanel('knowledge')" role="menuitem">
+        <span class="nav-icon"><i data-lucide="book-open"></i></span>
+        <span class="nav-label">Knowledge Base</span>
+      </a>
+
+      <div class="nav-group-label">Insights</div>
+
+      <a class="nav-link" id="nav-analytics" href="#analytics" onclick="showPanel('analytics')" role="menuitem">
+        <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span>
+        <span class="nav-label">Analytics</span>
+      </a>
+      <a class="nav-link" id="nav-sessions"  href="#sessions"  onclick="showPanel('sessions')"  role="menuitem">
+        <span class="nav-icon"><i data-lucide="clock"></i></span>
+        <span class="nav-label">Sessions</span>
+      </a>
+
+      <div class="nav-group-label">System</div>
+
+      <a class="nav-link" id="nav-health"    href="#health"    onclick="showPanel('health')"    role="menuitem">
+        <span class="nav-icon"><i data-lucide="activity"></i></span>
+        <span class="nav-label">System Health</span>
+      </a>
+      <a class="nav-link" id="nav-settings"  href="#settings"  onclick="showPanel('settings')"  role="menuitem">
+        <span class="nav-icon"><i data-lucide="settings"></i></span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <div class="sidebar-status">
+        <div class="status-dot" id="sidebar-dot"></div>
+        <span id="sidebar-status-text">Connecting…</span>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar avatar-sm" aria-hidden="true">UN</div>
+        <div class="user-meta">
+          <div class="user-name">Uma Nagal</div>
+          <div class="user-role">Operations Supervisor</div>
+        </div>
+      </div>
+      <div class="collapse-btn">
+        <button class="icon-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar" title="Collapse sidebar">
+          <i data-lucide="panel-left-close"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================
+       MAIN AREA
+  ======================================================================== -->
+  <div class="main-area">
+
+    <!-- TOPBAR -->
+    <header class="topbar" role="banner">
+      <div class="topbar-left">
+        <button class="icon-btn" id="mob-menu-btn" onclick="openMob()" aria-label="Open menu" style="display:none">
+          <i data-lucide="menu"></i>
+        </button>
+        <div>
+          <div class="page-title"  id="page-title">Overview</div>
+          <div class="page-crumb" id="page-crumb">Executive dashboard</div>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="search-wrap" style="width:100%">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            type="search"
+            class="search-input"
+            id="global-search"
+            placeholder="Search sessions, tickets, customers… (Ctrl+K)"
+            autocomplete="off"
+            aria-label="Global search"
+          />
+          <span class="search-kbd" aria-hidden="true">⌘K</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="sys-pill" id="sys-pill" role="status">
+          <div class="status-dot" id="sys-dot"></div>
+          <span id="sys-text">Checking…</span>
+        </div>
+
+        <button class="icon-btn" onclick="runDemo()" title="Run AI Demo" aria-label="Run AI Demo">
+          <i data-lucide="play-circle"></i>
+        </button>
+        <a href="http://localhost:8000/docs" target="_blank" rel="noopener" class="icon-btn" title="API Docs" aria-label="API Documentation">
+          <i data-lucide="file-text"></i>
+        </a>
+        <button class="icon-btn" title="Notifications" aria-label="Notifications">
+          <i data-lucide="bell"></i>
+        </button>
+
+        <div class="topbar-user" role="button" tabindex="0" aria-label="User menu">
+          <div class="avatar avatar-sm" aria-hidden="true">UN</div>
+          <div>
+            <div class="tu-name">Uma Nagal</div>
+            <div class="tu-role">Supervisor</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ================================================================
+           1. OVERVIEW
+      ================================================================ -->
+      <section class="panel" id="panel-overview" aria-labelledby="h-overview">
+
+        <!-- Welcome banner -->
+        <div class="welcome-banner">
+          <div class="wb-text">
+            <h2 id="h-overview">Good <span id="greeting">morning</span>, Uma 👋</h2>
+            <p>Here's a live snapshot of your AI-powered customer operations platform.</p>
+          </div>
+          <div class="wb-actions">
+            <button class="btn btn-ghost" onclick="loadMetrics()">
+              <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+            <button class="btn btn-primary btn-lg" onclick="runDemo()">
+              <i data-lucide="play-circle"></i> Run AI Demo
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="inbox"></i></div></div>
+            <div class="kpi-value" id="kpi-total">—</div>
+            <div class="kpi-label">Total Requests</div>
+          </div>
+          <div class="kpi-card kpi-success">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="check-circle-2"></i></div></div>
+            <div class="kpi-value" id="kpi-success">—</div>
+            <div class="kpi-label">Successful Resolutions</div>
+          </div>
+          <div class="kpi-card kpi-success">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="percent"></i></div></div>
+            <div class="kpi-value" id="kpi-rate">—</div>
+            <div class="kpi-label">Success Rate</div>
+          </div>
+          <div class="kpi-card kpi-warning">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="zap"></i></div></div>
+            <div class="kpi-value" id="kpi-latency">—</div>
+            <div class="kpi-label">Avg Resolution Time</div>
+          </div>
+          <div class="kpi-card kpi-danger">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="shield-alert"></i></div></div>
+            <div class="kpi-value" id="kpi-hitl">—</div>
+            <div class="kpi-label">Human Reviews Required</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="dollar-sign"></i></div></div>
+            <div class="kpi-value" id="kpi-refunds">—</div>
+            <div class="kpi-label">Refunds Processed</div>
+          </div>
+          <div class="kpi-card kpi-ai">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="cpu"></i></div></div>
+            <div class="kpi-value" id="kpi-failed">—</div>
+            <div class="kpi-label">Failed Requests</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="timer"></i></div></div>
+            <div class="kpi-value" id="kpi-uptime">—</div>
+            <div class="kpi-label">Platform Uptime</div>
+          </div>
+        </div>
+
+        <!-- Bottom row: Intent chart + Quick Actions -->
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:var(--sp-6)">
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="pie-chart"></i> Top Customer Intents</div>
+              <button class="btn btn-ghost btn-sm" onclick="loadMetrics()"><i data-lucide="refresh-cw"></i></button>
+            </div>
+            <div class="card-body">
+              <div class="intent-bars" id="ov-intent-bars">
+                <div class="empty-state" style="padding:var(--sp-8)">
+                  <div class="empty-icon"><i data-lucide="bar-chart"></i></div>
+                  <p>Send messages to populate intent analytics.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i data-lucide="layout-grid"></i> Quick Actions</div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+              <button class="btn btn-secondary w-full" onclick="showPanel('support')">
+                <i data-lucide="message-square"></i> Open Support Chat
+              </button>
+              <button class="btn btn-secondary w-full" onclick="showPanel('approvals')">
+                <i data-lucide="shield-check"></i> Review Approvals
+              </button>
+              <button class="btn btn-secondary w-full" onclick="showPanel('sessions')">
+                <i data-lucide="clock"></i> Session History
+              </button>
+              <button class="btn btn-secondary w-full" onclick="showPanel('health')">
+                <i data-lucide="activity"></i> System Health
+              </button>
+              <div class="divider"></div>
+              <button class="btn btn-primary w-full" onclick="runDemo()">
+                <i data-lucide="play-circle"></i> Run AI Demo Scenario
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           2. CUSTOMER SUPPORT
+      ================================================================ -->
+      <section class="panel hidden" id="panel-support" aria-labelledby="h-support">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-support">Customer Support</h2>
+            <p>Multi-agent AI-powered support workspace with real-time pipeline visibility</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-ghost btn-sm" onclick="clearChat()"><i data-lucide="trash-2"></i> Clear</button>
+            <button class="btn btn-primary btn-sm" onclick="runDemo()"><i data-lucide="play-circle"></i> Demo</button>
+          </div>
+        </div>
+
+        <div class="chat-workspace" style="flex:1;overflow:hidden;min-height:0">
+
+          <!-- Left: session list -->
+          <div class="chat-session-col">
+            <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+              <div class="card-header">
+                <div class="card-title"><i data-lucide="clock"></i> Recent Sessions</div>
+                <button class="icon-btn" onclick="loadChatSessions()" aria-label="Refresh"><i data-lucide="refresh-cw"></i></button>
+              </div>
+              <div class="chat-session-scroll" id="chat-sessions-scroll">
+                <div style="text-align:center;padding:var(--sp-6)"><p class="text-xs text-secondary">No sessions yet</p></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: chat window -->
+          <div class="chat-window">
+            <div class="chat-topbar">
+              <div class="flex items-center gap-2">
+                <div class="status-dot healthy" id="chat-status-dot"></div>
+                <span style="font-size:var(--fs-13);font-weight:var(--fw-semi)">NEXUS AI Support Agent</span>
+              </div>
+              <div style="font-size:var(--fs-12);color:var(--text-tertiary)" id="active-session-label">No active session</div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
+              <!-- Welcome state -->
+              <div class="chat-empty" id="chat-welcome">
+                <div class="chat-empty-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <h3>How can we help today?</h3>
+                <p>Describe a customer issue and NEXUS AI will classify, investigate, and resolve it — with human oversight for high-risk actions.</p>
+                <div class="quick-prompts">
+                  <button class="quick-prompt" onclick="sendQuickPrompt('I was charged twice for \$99.99 and need a refund immediately')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    Report duplicate charge
+                  </button>
+                  <button class="quick-prompt" onclick="sendQuickPrompt('I need a refund for my recent subscription payment')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Request refund
+                  </button>
+                  <button class="quick-prompt" onclick="sendQuickPrompt('My payment failed but I see a pending charge on my account')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Payment failure issue
+                  </button>
+                  <button class="quick-prompt" onclick="sendQuickPrompt('What is your refund policy for subscription charges?')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Refund policy query
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat input -->
+            <div class="chat-input-area">
+              <div class="chat-input-meta">
+                <div style="display:flex;align-items:center;gap:var(--sp-2)">
+                  <label class="form-label" for="cust-id">Customer ID</label>
+                  <input type="text" id="cust-id" class="input input-sm" style="width:160px" placeholder="CUST-12345 (optional)" />
+                </div>
+                <div style="display:flex;align-items:center;gap:var(--sp-2)">
+                  <label class="form-label" for="channel">Channel</label>
+                  <select id="channel" class="input input-sm" style="width:110px">
+                    <option value="web">Web</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
+                    <option value="chat">Live Chat</option>
+                  </select>
+                </div>
+              </div>
+              <div class="chat-input-row">
+                <textarea
+                  id="chat-input"
+                  class="input chat-textarea"
+                  placeholder="Describe the customer issue…"
+                  rows="2"
+                  onkeydown="handleChatKey(event)"
+                  aria-label="Message input"
+                ></textarea>
+                <button class="btn btn-primary" id="send-btn" onclick="sendMsg()" style="align-self:flex-end;padding:10px 18px">
+                  <i data-lucide="send"></i> Send
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: customer + pipeline -->
+          <div class="customer-col" id="customer-col">
+
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="info"></i> Session Info</div></div>
+              <div class="card-body compact" id="session-info-panel">
+                <p class="text-xs text-secondary" style="text-align:center;padding:var(--sp-3)">No active session</p>
+              </div>
+            </div>
+
+            <div class="card" id="customer-profile-card">
+              <div style="padding:var(--sp-4) var(--sp-5);background:linear-gradient(135deg,rgba(99,102,241,0.08) 0%,transparent 100%);border-bottom:1px solid var(--border-faint);display:flex;align-items:center;gap:var(--sp-3)">
+                <div class="avatar avatar-lg" id="cust-avatar">—</div>
+                <div>
+                  <div style="font-size:var(--fs-14);font-weight:var(--fw-bold)" id="cust-name">Unknown Customer</div>
+                  <div style="font-size:var(--fs-11);color:var(--text-tertiary)" id="cust-tier">—</div>
+                </div>
+              </div>
+              <div class="card-body compact" id="cust-fields">
+                <p class="text-xs text-secondary" style="text-align:center;padding:var(--sp-3)">Customer data appears after first interaction</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="cpu"></i> AI Pipeline</div></div>
+              <div class="card-body compact">
+                <div class="pipeline-steps" id="pipeline-steps">
+                  <div class="pipeline-step" data-agent="triage_agent">
+                    <div class="ps-icon">🎯</div>
+                    <div class="ps-info"><div class="ps-name">Triage Agent</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="customer_agent">
+                    <div class="ps-icon">👤</div>
+                    <div class="ps-info"><div class="ps-name">Customer Intelligence</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="rag_agent">
+                    <div class="ps-icon">📚</div>
+                    <div class="ps-info"><div class="ps-name">RAG Knowledge</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="investigation_agent">
+                    <div class="ps-icon">🔍</div>
+                    <div class="ps-info"><div class="ps-name">Investigation</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="resolution_agent">
+                    <div class="ps-icon">⚡</div>
+                    <div class="ps-info"><div class="ps-name">Resolution</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="review_agent">
+                    <div class="ps-icon">✅</div>
+                    <div class="ps-info"><div class="ps-name">Review & Audit</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                  <div class="pipeline-step" data-agent="communication_node">
+                    <div class="ps-icon">📨</div>
+                    <div class="ps-info"><div class="ps-name">Communication</div><div class="ps-status">Waiting</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           3. TICKETS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-tickets" aria-labelledby="h-tickets">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-tickets">Tickets</h2>
+            <p>Agent execution trace and full investigation details per session</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadSessionsForTickets()">
+            <i data-lucide="list"></i> Browse Sessions
+          </button>
+        </div>
+
+        <!-- Lookup toolbar -->
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="ticket-search" class="input" style="padding-left:30px;min-width:300px" placeholder="Enter Session ID or Ticket ID…" onkeydown="if(event.key==='Enter')lookupTicket()" />
+          </div>
+          <button class="btn btn-primary" onclick="lookupTicket()">
+            <i data-lucide="search"></i> Lookup
+          </button>
+        </div>
+
+        <!-- Ticket detail (hidden until loaded) -->
+        <div id="ticket-detail" class="hidden" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+
+          <!-- Header summary -->
+          <div class="card">
+            <div class="card-body">
+              <div style="display:flex;align-items:center;gap:var(--sp-6);flex-wrap:wrap">
+                <div>
+                  <div class="form-label">Ticket ID</div>
+                  <div class="mono" style="font-size:var(--fs-12);color:var(--text-primary);margin-top:3px" id="det-ticket-id">—</div>
+                </div>
+                <div>
+                  <div class="form-label">Intent</div>
+                  <div style="margin-top:4px" id="det-intent"><span class="badge badge-neutral">—</span></div>
+                </div>
+                <div>
+                  <div class="form-label">Priority</div>
+                  <div style="margin-top:4px" id="det-priority"><span class="badge badge-neutral">—</span></div>
+                </div>
+                <div>
+                  <div class="form-label">Risk Level</div>
+                  <div style="margin-top:4px" id="det-risk"><span class="badge badge-neutral">—</span></div>
+                </div>
+                <div>
+                  <div class="form-label">Approval</div>
+                  <div style="margin-top:4px" id="det-approval"><span class="badge badge-neutral">—</span></div>
+                </div>
+                <div>
+                  <div class="form-label">Total Latency</div>
+                  <div class="mono" style="font-size:var(--fs-13);font-weight:var(--fw-semi);color:var(--text-primary);margin-top:3px" id="det-latency">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail 2-col grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)">
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="search"></i> Investigation Findings</div></div>
+              <div class="card-body"><div class="pre-wrap" id="det-findings">—</div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="book-open"></i> Policy Citations</div></div>
+              <div class="card-body"><div class="pre-wrap" id="det-knowledge">—</div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="zap"></i> Proposed Actions</div></div>
+              <div class="card-body" id="det-actions"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><i data-lucide="message-circle"></i> Final Response</div></div>
+              <div class="card-body"><p style="font-size:var(--fs-13);color:var(--text-secondary);line-height:var(--lh-loose)" id="det-response">—</p></div>
+            </div>
+          </div>
+
+          <!-- Execution trace -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i data-lucide="git-branch"></i> Agent Execution Timeline</div>
+              <span class="badge badge-purple" id="det-agent-count">0 agents</span>
+            </div>
+            <div class="card-body">
+              <div class="trace-timeline" id="trace-timeline"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sessions list (for browsing) -->
+        <div id="ticket-sessions-wrap" class="hidden">
+          <div class="card">
+            <div class="card-body flush">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Session ID</th>
+                      <th>Ticket ID</th>
+                      <th>Intent</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Latency</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ticket-sessions-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           4. APPROVALS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-approvals" aria-labelledby="h-approvals">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-approvals">Approval Center</h2>
+            <p>Review and authorize high-risk automated actions requiring human oversight</p>
+          </div>
+          <button class="btn btn-ghost" onclick="loadApprovals()"><i data-lucide="refresh-cw"></i> Refresh</button>
+        </div>
+
+        <div class="approval-queue" id="approvals-container">
+          <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="shield-check"></i></div>
+            <h3>All caught up</h3>
+            <p>No actions are currently waiting for human review.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           5. AI AGENTS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-agents" aria-labelledby="h-agents">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-agents">AI Agent Network</h2>
+            <p>LangGraph multi-agent architecture with HITL interrupt nodes and MCP tool integrations</p>
+          </div>
+          <span class="badge badge-purple" style="font-size:var(--fs-12)">LangGraph Supervisor</span>
+        </div>
+
+        <!-- Workflow Architecture Graph -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="git-merge"></i> Workflow Architecture</div>
+            <span class="badge badge-brand">7-Agent Pipeline</span>
+          </div>
+          <div class="card-body flush graph-wrap" style="padding:var(--sp-4)">
+            <svg id="agent-graph-svg" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:700px">
+              <defs>
+                <marker id="arr-brand" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                  <polygon points="0 0,9 3.5,0 7" fill="#6366f1"/>
+                </marker>
+                <marker id="arr-warn" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                  <polygon points="0 0,9 3.5,0 7" fill="#f59e0b"/>
+                </marker>
+                <marker id="arr-ok" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                  <polygon points="0 0,9 3.5,0 7" fill="#10b981"/>
+                </marker>
+              </defs>
+
+              <!-- Edges -->
+              <line x1="54" y1="76" x2="130" y2="126" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <line x1="220" y1="160" x2="286" y2="160" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <line x1="374" y1="160" x2="440" y2="160" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <line x1="528" y1="160" x2="594" y2="160" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <line x1="682" y1="160" x2="748" y2="160" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <line x1="836" y1="196" x2="836" y2="378" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arr-brand)" opacity=".55"/>
+              <!-- HITL branch -->
+              <path d="M 638 196 Q 640 300 468 340 Q 310 375 305 400" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6 3" marker-end="url(#arr-warn)" opacity=".7"/>
+              <text x="660" y="268" fill="#f59e0b" font-size="9.5" font-family="Plus Jakarta Sans,sans-serif" font-weight="600">HIGH RISK</text>
+              <!-- HITL back -->
+              <path d="M 400 400 Q 700 440 780 205" stroke="#10b981" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#arr-ok)" opacity=".45"/>
+
+              <!-- START -->
+              <circle cx="36" cy="76" r="19" fill="#0d1321" stroke="#6366f1" stroke-width="1.5"/>
+              <text x="36" y="81" text-anchor="middle" fill="#a5b4fc" font-size="9" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">START</text>
+
+              <!-- Triage -->
+              <rect x="132" y="116" width="86" height="88" rx="12" fill="#0d1321" stroke="#6366f1" stroke-width="1.5"/>
+              <text x="175" y="149" text-anchor="middle" font-size="20">🎯</text>
+              <text x="175" y="170" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">TRIAGE</text>
+              <text x="175" y="183" text-anchor="middle" fill="#6366f1" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">AGENT</text>
+
+              <!-- Customer Intel -->
+              <rect x="288" y="116" width="86" height="88" rx="12" fill="#0d1321" stroke="#8b5cf6" stroke-width="1.5"/>
+              <text x="331" y="149" text-anchor="middle" font-size="20">👤</text>
+              <text x="331" y="170" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">CUSTOMER</text>
+              <text x="331" y="183" text-anchor="middle" fill="#8b5cf6" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">INTEL</text>
+
+              <!-- RAG (above) -->
+              <rect x="288" y="46" width="86" height="58" rx="10" fill="#0a111e" stroke="#8b5cf6" stroke-width="1.2" opacity=".85"/>
+              <text x="331" y="68" text-anchor="middle" font-size="17">📚</text>
+              <text x="331" y="85" text-anchor="middle" fill="#a5b4fc" font-size="8" font-weight="600" font-family="Plus Jakarta Sans,sans-serif">RAG AGENT</text>
+              <line x1="331" y1="116" x2="331" y2="104" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="3 2" opacity=".5"/>
+
+              <!-- Investigation -->
+              <rect x="442" y="116" width="86" height="88" rx="12" fill="#0d1321" stroke="#06b6d4" stroke-width="1.5"/>
+              <text x="485" y="149" text-anchor="middle" font-size="20">🔍</text>
+              <text x="485" y="170" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">INVEST.</text>
+              <text x="485" y="183" text-anchor="middle" fill="#06b6d4" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">AGENT</text>
+
+              <!-- Resolution -->
+              <rect x="596" y="116" width="86" height="88" rx="12" fill="#0d1321" stroke="#f59e0b" stroke-width="1.5"/>
+              <text x="639" y="149" text-anchor="middle" font-size="20">⚡</text>
+              <text x="639" y="170" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">RESOLUTION</text>
+              <text x="639" y="183" text-anchor="middle" fill="#f59e0b" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">AGENT</text>
+
+              <!-- Review -->
+              <rect x="750" y="116" width="86" height="88" rx="12" fill="#0d1321" stroke="#10b981" stroke-width="1.5"/>
+              <text x="793" y="149" text-anchor="middle" font-size="20">✅</text>
+              <text x="793" y="170" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">REVIEW</text>
+              <text x="793" y="183" text-anchor="middle" fill="#10b981" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">AGENT</text>
+
+              <!-- HITL -->
+              <rect x="305" y="378" width="98" height="70" rx="12" fill="#160508" stroke="#ef4444" stroke-width="2"/>
+              <text x="354" y="406" text-anchor="middle" font-size="18">👨‍💼</text>
+              <text x="354" y="426" text-anchor="middle" fill="#fca5a5" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">HUMAN</text>
+              <text x="354" y="439" text-anchor="middle" fill="#ef4444" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">APPROVAL</text>
+
+              <!-- Communication -->
+              <rect x="750" y="380" width="86" height="84" rx="12" fill="#0d1321" stroke="#6366f1" stroke-width="1.5"/>
+              <text x="793" y="416" text-anchor="middle" font-size="20">📨</text>
+              <text x="793" y="437" text-anchor="middle" fill="#c7d2fe" font-size="8.5" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">COMM</text>
+              <text x="793" y="450" text-anchor="middle" fill="#6366f1" font-size="7.5" font-family="Plus Jakarta Sans,sans-serif">NODE</text>
+
+              <!-- END -->
+              <line x1="793" y1="464" x2="793" y2="492" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-ok)" opacity=".55"/>
+              <circle cx="793" cy="507" r="19" fill="#0d1321" stroke="#10b981" stroke-width="1.5"/>
+              <text x="793" y="512" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">END</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Agent cards -->
+        <div class="agents-grid">
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">Triage Agent</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-success">● Active</span></div>
+              </div>
+              <div class="agent-icon-wrap">🎯</div>
+            </div>
+            <p class="agent-desc">Rule-based and LLM intent classification. Routes customer requests to appropriate specialist agents based on issue type, severity, and customer tier. Scores priority from Critical to Low.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">Intent Classification</span>
+              <span class="cap-tag">Priority Scoring</span>
+              <span class="cap-tag">Routing</span>
+            </div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">Customer Intelligence</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-success">● Active</span></div>
+              </div>
+              <div class="agent-icon-wrap">👤</div>
+            </div>
+            <p class="agent-desc">Fetches full customer profile via CRM MCP server. Determines VIP status, lifetime value, account tier, and sentiment history for context-aware resolution decisions.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">CRM MCP</span>
+              <span class="cap-tag">Profile Enrichment</span>
+              <span class="cap-tag">VIP Detection</span>
+            </div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">RAG Knowledge Agent</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-purple">AI-Powered</span></div>
+              </div>
+              <div class="agent-icon-wrap">📚</div>
+            </div>
+            <p class="agent-desc">Hybrid BM25 + semantic retrieval from policy documents using Reciprocal Rank Fusion. Provides grounded policy citations with relevance scores for every response.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">BM25 + Semantic</span>
+              <span class="cap-tag">RRF Fusion</span>
+              <span class="cap-tag">Policy Grounding</span>
+            </div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">Investigation Agent</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-success">● Active</span></div>
+              </div>
+              <div class="agent-icon-wrap">🔍</div>
+            </div>
+            <p class="agent-desc">Queries Billing MCP server for full transaction history. Detects duplicate charges by grouping on order IDs. Flags anomalously large or repeated transactions automatically.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">Billing MCP</span>
+              <span class="cap-tag">Anomaly Detection</span>
+              <span class="cap-tag">Duplicate Detection</span>
+            </div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">Resolution Agent</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-warning">Risk Engine</span></div>
+              </div>
+              <div class="agent-icon-wrap">⚡</div>
+            </div>
+            <p class="agent-desc">Synthesises optimal actions using all gathered context. Classifies risk level and triggers HITL interrupt node for high-value refunds requiring explicit human authorization.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">Risk Engine</span>
+              <span class="cap-tag">Action Synthesis</span>
+              <span class="cap-tag">HITL Trigger</span>
+            </div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div>
+                <div class="agent-name">Review Agent</div>
+                <div style="margin-top:var(--sp-1)"><span class="badge badge-success">Compliance</span></div>
+              </div>
+              <div class="agent-icon-wrap">✅</div>
+            </div>
+            <p class="agent-desc">LLM-as-judge quality audit gate. Checks policy compliance, factual accuracy, professional tone, and ensures no sensitive internal information leaks into customer responses.</p>
+            <div class="agent-stats">
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Tasks</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Success</span></div>
+              <div class="agent-stat"><span class="agent-stat-val">—</span><span class="agent-stat-lbl">Avg Time</span></div>
+            </div>
+            <div class="agent-caps">
+              <span class="cap-tag">LLM Judge</span>
+              <span class="cap-tag">Compliance Gate</span>
+              <span class="cap-tag">Quality Audit</span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           6. KNOWLEDGE BASE
+      ================================================================ -->
+      <section class="panel hidden" id="panel-knowledge" aria-labelledby="h-knowledge">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-knowledge">Knowledge Base</h2>
+            <p>Enterprise policy documents powering hybrid BM25 + semantic RAG retrieval</p>
+          </div>
+          <button class="btn btn-ghost" onclick="loadKnowledge()"><i data-lucide="refresh-cw"></i> Refresh</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="kb-stats">
+          <div class="kb-stat-card">
+            <div class="kb-stat-value" id="kb-status">—</div>
+            <div class="kb-stat-label">Index Status</div>
+          </div>
+          <div class="kb-stat-card">
+            <div class="kb-stat-value" id="kb-docs">—</div>
+            <div class="kb-stat-label">Documents</div>
+          </div>
+          <div class="kb-stat-card">
+            <div class="kb-stat-value" id="kb-chunks">—</div>
+            <div class="kb-stat-label">Indexed Chunks</div>
+          </div>
+          <div class="kb-stat-card">
+            <div class="kb-stat-value" id="kb-date">—</div>
+            <div class="kb-stat-label">Last Indexed</div>
+          </div>
+        </div>
+
+        <!-- Documents list -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="files"></i> Policy Documents</div>
+            <span class="badge badge-brand">Hybrid BM25 + Semantic · RRF Fusion</span>
+          </div>
+          <div class="card-body">
+            <div class="doc-list">
+              <div class="doc-item">
+                <div class="doc-item-left">
+                  <i data-lucide="file-text"></i>
+                  <div><div class="doc-name">Billing &amp; Payment Dispute Procedure</div><div class="doc-desc">Refund eligibility, dispute resolution timelines, escalation paths</div></div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-item-left">
+                  <i data-lucide="file-text"></i>
+                  <div><div class="doc-name">Customer Service SLA v2.1</div><div class="doc-desc">Response times, escalation paths, SLA commitments by tier</div></div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-item-left">
+                  <i data-lucide="file-text"></i>
+                  <div><div class="doc-name">Payment Failure Handling Protocol</div><div class="doc-desc">Retry policies, partial charges, customer communication procedures</div></div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-item-left">
+                  <i data-lucide="file-text"></i>
+                  <div><div class="doc-name">Subscription &amp; Refund Policy</div><div class="doc-desc">Cancellation windows, pro-rated refunds, exception handling</div></div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retrieval pipeline explanation -->
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="info"></i> Retrieval Architecture</div></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);text-align:center">
+              <div>
+                <div style="font-size:26px;margin-bottom:var(--sp-2)">🔎</div>
+                <div style="font-size:var(--fs-13);font-weight:var(--fw-semi);color:var(--text-primary)">BM25 Search</div>
+                <div style="font-size:var(--fs-12);color:var(--text-secondary);margin-top:var(--sp-2);line-height:var(--lh-loose)">Keyword-based lexical retrieval for exact policy term matching</div>
+              </div>
+              <div>
+                <div style="font-size:26px;margin-bottom:var(--sp-2)">🧠</div>
+                <div style="font-size:var(--fs-13);font-weight:var(--fw-semi);color:var(--text-primary)">Semantic Search</div>
+                <div style="font-size:var(--fs-12);color:var(--text-secondary);margin-top:var(--sp-2);line-height:var(--lh-loose)">Dense vector embeddings for conceptual similarity matching</div>
+              </div>
+              <div>
+                <div style="font-size:26px;margin-bottom:var(--sp-2)">⚗️</div>
+                <div style="font-size:var(--fs-13);font-weight:var(--fw-semi);color:var(--text-primary)">RRF Fusion</div>
+                <div style="font-size:var(--fs-12);color:var(--text-secondary);margin-top:var(--sp-2);line-height:var(--lh-loose)">Reciprocal Rank Fusion merges both result sets for optimal relevance</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           7. ANALYTICS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-analytics" aria-labelledby="h-analytics">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-analytics">Analytics</h2>
+            <p>Platform operational metrics and performance indicators</p>
+          </div>
+          <button class="btn btn-ghost" onclick="loadMetrics()"><i data-lucide="refresh-cw"></i> Refresh</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="inbox"></i></div></div>
+            <div class="kpi-value" id="an-total">—</div>
+            <div class="kpi-label">Total Requests</div>
+          </div>
+          <div class="kpi-card kpi-success">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="check-circle-2"></i></div></div>
+            <div class="kpi-value" id="an-success">—</div>
+            <div class="kpi-label">Successful</div>
+          </div>
+          <div class="kpi-card kpi-danger">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="x-circle"></i></div></div>
+            <div class="kpi-value" id="an-failed">—</div>
+            <div class="kpi-label">Failed</div>
+          </div>
+          <div class="kpi-card kpi-success">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="percent"></i></div></div>
+            <div class="kpi-value" id="an-rate">—</div>
+            <div class="kpi-label">Success Rate</div>
+          </div>
+          <div class="kpi-card kpi-warning">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="zap"></i></div></div>
+            <div class="kpi-value" id="an-latency">—</div>
+            <div class="kpi-label">Avg Latency</div>
+          </div>
+          <div class="kpi-card kpi-danger">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="user-check"></i></div></div>
+            <div class="kpi-value" id="an-hitl">—</div>
+            <div class="kpi-label">HITL Triggers</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="dollar-sign"></i></div></div>
+            <div class="kpi-value" id="an-refunds">—</div>
+            <div class="kpi-label">Refunds</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><div class="kpi-icon"><i data-lucide="timer"></i></div></div>
+            <div class="kpi-value" id="an-uptime">—</div>
+            <div class="kpi-label">Uptime</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="pie-chart"></i> Intent Distribution</div>
+            <span class="text-xs text-secondary">Top 5 by request volume</span>
+          </div>
+          <div class="card-body">
+            <div class="intent-bars" id="an-intent-bars">
+              <div class="empty-state" style="padding:var(--sp-8)">
+                <div class="empty-icon"><i data-lucide="bar-chart-2"></i></div>
+                <p>Send messages to populate intent analytics.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           8. SESSIONS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-sessions" aria-labelledby="h-sessions">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-sessions">Session History</h2>
+            <p>All customer support sessions — click a row to view the full ticket trace</p>
+          </div>
+          <button class="btn btn-ghost" onclick="loadSessionsPage()"><i data-lucide="refresh-cw"></i> Refresh</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="input" id="sessions-filter" style="padding-left:30px;min-width:240px" placeholder="Filter by session ID, intent…" oninput="filterSessions(this.value)" />
+          </div>
+          <span class="text-xs text-secondary" id="sessions-count">— sessions</span>
+        </div>
+
+        <div class="card">
+          <div class="card-body flush">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Ticket ID</th>
+                    <th>Intent</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Latency</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody id="sessions-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           9. SYSTEM HEALTH
+      ================================================================ -->
+      <section class="panel hidden" id="panel-health" aria-labelledby="h-health">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-health">System Health</h2>
+            <p>Real-time status of all platform services and integrations</p>
+          </div>
+          <button class="btn btn-ghost" onclick="loadHealth()"><i data-lucide="refresh-cw"></i> Refresh</button>
+        </div>
+
+        <!-- Overall status -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="activity"></i> Platform Status</div>
+            <span class="badge badge-neutral" id="platform-status-badge">Checking…</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:var(--sp-6);flex-wrap:wrap">
+              <div><div class="form-label">Version</div><div style="font-size:var(--fs-14);font-weight:var(--fw-semi);margin-top:3px" id="h-version">—</div></div>
+              <div><div class="form-label">Uptime</div><div style="font-size:var(--fs-14);font-weight:var(--fw-semi);margin-top:3px" id="h-uptime">—</div></div>
+              <div><div class="form-label">Active Sessions</div><div style="font-size:var(--fs-14);font-weight:var(--fw-semi);margin-top:3px" id="h-sessions-count">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service grid -->
+        <div class="health-grid">
+          <div class="health-card" id="hc-backend">
+            <div class="health-svc-icon">🖥️</div>
+            <div class="health-info"><div class="health-name">FastAPI Backend</div><div class="health-desc">REST API gateway</div></div>
+            <span class="health-status-pill" id="hs-backend">Checking</span>
+          </div>
+          <div class="health-card" id="hc-supervisor">
+            <div class="health-svc-icon">🤖</div>
+            <div class="health-info"><div class="health-name">LangGraph Supervisor</div><div class="health-desc">Multi-agent orchestration</div></div>
+            <span class="health-status-pill" id="hs-supervisor">Checking</span>
+          </div>
+          <div class="health-card" id="hc-rag">
+            <div class="health-svc-icon">📚</div>
+            <div class="health-info"><div class="health-name">RAG Knowledge Base</div><div class="health-desc">BM25 + semantic index</div></div>
+            <span class="health-status-pill" id="hs-rag">Checking</span>
+          </div>
+          <div class="health-card hc-healthy">
+            <div class="health-svc-icon">📞</div>
+            <div class="health-info"><div class="health-name">CRM MCP Server</div><div class="health-desc">Customer profile integration</div></div>
+            <span class="health-status-pill" id="hs-crm">Connected</span>
+          </div>
+          <div class="health-card hc-healthy">
+            <div class="health-svc-icon">💳</div>
+            <div class="health-info"><div class="health-name">Billing MCP Server</div><div class="health-desc">Transaction data access</div></div>
+            <span class="health-status-pill" id="hs-billing">Connected</span>
+          </div>
+          <div class="health-card hc-healthy">
+            <div class="health-svc-icon">🎫</div>
+            <div class="health-info"><div class="health-name">Ticketing MCP Server</div><div class="health-desc">Ticket creation &amp; tracking</div></div>
+            <span class="health-status-pill" id="hs-ticketing">Connected</span>
+          </div>
+          <div class="health-card hc-healthy">
+            <div class="health-svc-icon">📣</div>
+            <div class="health-info"><div class="health-name">Notification MCP</div><div class="health-desc">Customer communication</div></div>
+            <span class="health-status-pill" id="hs-notif">Connected</span>
+          </div>
+          <div class="health-card" id="hc-llm">
+            <div class="health-svc-icon">🧠</div>
+            <div class="health-info"><div class="health-name">LLM Provider</div><div class="health-desc">Gemini / OpenRouter</div></div>
+            <span class="health-status-pill" id="hs-llm">Checking</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================
+           10. SETTINGS
+      ================================================================ -->
+      <section class="panel hidden" id="panel-settings" aria-labelledby="h-settings">
+
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2 id="h-settings">Settings</h2>
+            <p>Platform configuration reference</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="server"></i> API Configuration</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+            <div class="label-row"><span class="lbl">API Base URL</span><span class="mono-val" style="color:var(--brand-400)">http://localhost:8000</span></div>
+            <div class="divider"></div>
+            <div class="label-row"><span class="lbl">API Prefix</span><span class="mono-val">/api/v1</span></div>
+            <div class="divider"></div>
+            <div class="label-row"><span class="lbl">Documentation</span><a href="http://localhost:8000/docs" target="_blank" class="text-brand text-xs">http://localhost:8000/docs ↗</a></div>
+            <div class="divider"></div>
+            <div class="label-row"><span class="lbl">Platform Version</span><span class="badge badge-brand">1.0.0</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i data-lucide="info"></i> About NEXUS AI</div></div>
+          <div class="card-body">
+            <p style="font-size:var(--fs-13);color:var(--text-secondary);line-height:var(--lh-loose);max-width:600px">
+              NEXUS AI is a production-grade enterprise intelligent customer operations platform powered by a 7-agent LangGraph pipeline,
+              hybrid BM25 + semantic RAG knowledge retrieval, MCP tool server integrations (CRM, Billing, Ticketing, Notifications),
+              and human-in-the-loop approval workflows for high-risk automated actions.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4)">
+              <span class="badge badge-purple">LangGraph</span>
+              <span class="badge badge-purple">FastAPI</span>
+              <span class="badge badge-purple">Hybrid RAG</span>
+              <span class="badge badge-purple">MCP Servers</span>
+              <span class="badge badge-purple">HITL Approval</span>
+              <span class="badge badge-purple">Docker</span>
+              <span class="badge badge-purple">AWS ECS</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-area -->
+</div><!-- /app -->
+
+<script type="module" src="app.js"></script>
+<script>
+  // Initialize lucide after DOM + defer script load
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+  // Fallback: after window load
+  window.addEventListener('load', () => {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  });
+</script>
+</body>
+</html>
