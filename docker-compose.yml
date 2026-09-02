@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  nexus-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexus_ai_enterprise_agent
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - ENVIRONMENT=production
+      - PYTHONPATH=/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
