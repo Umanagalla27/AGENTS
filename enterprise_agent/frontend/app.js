@@ -1174,6 +1174,69 @@ function reIcons () {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Authentication & Data Entry Modals
+// ─────────────────────────────────────────────────────────────────────────────
+
+window.openLoginModal = function () {
+  document.getElementById('login-modal')?.classList.remove('hidden');
+  reIcons();
+};
+
+window.closeLoginModal = function () {
+  document.getElementById('login-modal')?.classList.add('hidden');
+};
+
+window.handleLogin = function (ev) {
+  if (ev) ev.preventDefault();
+  const username = document.getElementById('login-username')?.value.trim() || 'Uma Nagal';
+  const role     = document.getElementById('login-role')?.value            || 'Supervisor';
+
+  const nameParts = username.split('@')[0].split('.');
+  const displayName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  const initials = nameParts.map(p => p.charAt(0).toUpperCase()).join('');
+
+  setText('topbar-user-name', displayName);
+  setText('topbar-user-role', role);
+  setText('topbar-avatar', initials || 'UN');
+  setText('sidebar-user-name', displayName);
+  setText('sidebar-user-role', role);
+  setText('sidebar-avatar', initials || 'UN');
+  setText('welcome-user-name', displayName.split(' ')[0]);
+
+  closeLoginModal();
+  showToast(`Authenticated successfully as ${displayName} (${role}).`, 'success', 5000);
+  pushTerminalLog('INFO', `User authenticated: ${displayName} [Role: ${role}]`);
+};
+
+window.openDataEntryModal = function () {
+  document.getElementById('data-entry-modal')?.classList.remove('hidden');
+  reIcons();
+};
+
+window.closeDataEntryModal = function () {
+  document.getElementById('data-entry-modal')?.classList.add('hidden');
+};
+
+window.submitDataEntry = function (ev) {
+  if (ev) ev.preventDefault();
+  const custId   = document.getElementById('de-customer-id')?.value.trim()   || 'CUST-98421';
+  const custName = document.getElementById('de-customer-name')?.value.trim() || 'Customer';
+  const desc     = document.getElementById('de-description')?.value.trim()   || '';
+
+  closeDataEntryModal();
+  showPanel('support');
+
+  const custInp = document.getElementById('cust-id');
+  if (custInp) custInp.value = custId;
+
+  const chatInp = document.getElementById('chat-input');
+  if (chatInp) chatInp.value = desc;
+
+  sendMsg();
+  showToast(`Ticket data dispatched for ${custName} (${custId}).`, 'info');
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Initialisation
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -72,6 +72,108 @@
   </div>
 </div>
 
+<!-- Login / Authentication Modal -->
+<div class="modal-overlay hidden" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="login-modal-title">Enterprise Authentication</div>
+        <div class="modal-sub">Sign in to NEXUS AI Customer Operations Platform</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeLoginModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:var(--sp-4)">
+          <label class="form-label" for="login-username">Email / Username</label>
+          <input type="text" id="login-username" class="input" value="uma.nagal@nexus.ai" required placeholder="name@company.com" />
+        </div>
+        <div class="form-group" style="margin-bottom:var(--sp-4)">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="input" value="••••••••••••" required placeholder="Enter password" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-role">Operational Role</label>
+          <select id="login-role" class="input">
+            <option value="Operations Supervisor">Operations Supervisor (Full Access)</option>
+            <option value="Tier 1 Support Agent">Tier 1 Support Agent</option>
+            <option value="Platform Administrator">Platform Administrator</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div class="modal-foot-actions" style="width:100%;justify-content:space-between">
+          <button type="button" class="btn btn-ghost" onclick="closeLoginModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i data-lucide="log-in"></i> Sign In &amp; Continue
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Customer Data Entry Modal -->
+<div class="modal-overlay hidden" id="data-entry-modal" role="dialog" aria-modal="true" aria-labelledby="data-entry-title">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="data-entry-title">New Customer Data / Ticket Entry</div>
+        <div class="modal-sub">Create a new customer operation ticket for multi-agent processing</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeDataEntryModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form onsubmit="submitDataEntry(event)">
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="de-customer-id">Customer ID</label>
+            <input type="text" id="de-customer-id" class="input" value="CUST-98421" required placeholder="e.g. CUST-12345" />
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label" for="de-customer-name">Customer Name</label>
+            <input type="text" id="de-customer-name" class="input" value="Uma Nagal" required placeholder="Customer Full Name" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="de-category">Category / Intent</label>
+            <select id="de-category" class="input">
+              <option value="duplicate_charge">💳 Duplicate Charge</option>
+              <option value="refund_request">💰 Refund Request</option>
+              <option value="cancel_order">📦 Cancel Order</option>
+              <option value="billing_dispute">⚖️ Billing Dispute</option>
+              <option value="technical_issue">🔧 Technical Issue</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label" for="de-amount">Transaction Amount ($)</label>
+            <input type="number" step="0.01" id="de-amount" class="input" value="99.99" placeholder="99.99" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="de-description">Issue Description / Query</label>
+          <textarea id="de-description" class="input" rows="3" required placeholder="Provide details about the customer request…">I was charged twice for $99.99 on order #98421 and need a refund immediately.</textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div class="modal-foot-actions" style="width:100%;justify-content:space-between">
+          <button type="button" class="btn btn-ghost" onclick="closeDataEntryModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i data-lucide="send"></i> Dispatch to AI Agents
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ============================================================================
      APP SHELL
 ============================================================================ -->
@@ -158,11 +260,11 @@
         <div class="status-dot" id="sidebar-dot"></div>
         <span id="sidebar-status-text">Connecting…</span>
       </div>
-      <div class="sidebar-user">
-        <div class="avatar avatar-sm" aria-hidden="true">UN</div>
+      <div class="sidebar-user" onclick="openLoginModal()" title="Click to Sign In / Change Role">
+        <div class="avatar avatar-sm" aria-hidden="true" id="sidebar-avatar">UN</div>
         <div class="user-meta">
-          <div class="user-name">Uma Nagal</div>
-          <div class="user-role">Operations Supervisor</div>
+          <div class="user-name" id="sidebar-user-name">Uma Nagal</div>
+          <div class="user-role" id="sidebar-user-role">Operations Supervisor</div>
         </div>
       </div>
       <div class="collapse-btn">
@@ -228,11 +330,11 @@
           <i data-lucide="bell"></i>
         </button>
 
-        <div class="topbar-user" role="button" tabindex="0" aria-label="User menu">
-          <div class="avatar avatar-sm" aria-hidden="true">UN</div>
+        <div class="topbar-user" role="button" tabindex="0" onclick="openLoginModal()" aria-label="User menu">
+          <div class="avatar avatar-sm" aria-hidden="true" id="topbar-avatar">UN</div>
           <div>
-            <div class="tu-name">Uma Nagal</div>
-            <div class="tu-role">Supervisor</div>
+            <div class="tu-name" id="topbar-user-name">Uma Nagal</div>
+            <div class="tu-role" id="topbar-user-role">Supervisor</div>
           </div>
         </div>
       </div>
@@ -249,12 +351,12 @@
         <!-- Welcome banner -->
         <div class="welcome-banner">
           <div class="wb-text">
-            <h2 id="h-overview">Good <span id="greeting">morning</span>, Uma 👋</h2>
+            <h2 id="h-overview">Good <span id="greeting">morning</span>, <span id="welcome-user-name">Uma</span> 👋</h2>
             <p>Here's a live snapshot of your AI-powered customer operations platform.</p>
           </div>
           <div class="wb-actions">
-            <button class="btn btn-ghost" onclick="loadMetrics()">
-              <i data-lucide="refresh-cw"></i> Refresh
+            <button class="btn btn-ghost" onclick="openDataEntryModal()">
+              <i data-lucide="plus-circle"></i> Enter Ticket Data
             </button>
             <button class="btn btn-primary btn-lg" onclick="runDemo()">
               <i data-lucide="play-circle"></i> Run AI Demo
