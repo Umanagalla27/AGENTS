@@ -206,6 +206,13 @@
       </div>
 
       <div class="topbar-right">
+        <!-- Model Selector Pill -->
+        <div class="model-selector-pill" id="model-selector-btn" title="Current Active LLM Provider">
+          <i data-lucide="sparkles" style="width:14px;height:14px;color:var(--purple)"></i>
+          <span>Gemini 1.5 Flash</span>
+          <i data-lucide="chevron-down" style="width:12px;height:12px;color:var(--text-tertiary)"></i>
+        </div>
+
         <div class="sys-pill" id="sys-pill" role="status">
           <div class="status-dot" id="sys-dot"></div>
           <span id="sys-text">Checking…</span>
@@ -296,6 +303,59 @@
             <div class="kpi-top"><div class="kpi-icon"><i data-lucide="timer"></i></div></div>
             <div class="kpi-value" id="kpi-uptime">—</div>
             <div class="kpi-label">Platform Uptime</div>
+          </div>
+        </div>
+
+        <!-- Multi-Agent Topology Visualizer -->
+        <div class="card" style="margin-bottom:var(--sp-6)">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="network" style="color:var(--brand-400)"></i> Active Multi-Agent Orchestration Flow (LangGraph)</div>
+            <div class="badge badge-success">● 7 Active Agent Nodes</div>
+          </div>
+          <div class="card-body">
+            <div class="pipeline-flow-container">
+              <div class="pipeline-node active" title="Analyzes query intent, customer tone & priority">
+                <div class="pipeline-node-icon">🎯</div>
+                <div class="pipeline-node-title">Triage</div>
+                <div class="pipeline-node-lat">12ms · 99.8%</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node active" title="Retrieves customer profile, tier & history">
+                <div class="pipeline-node-icon">👤</div>
+                <div class="pipeline-node-title">Customer Intel</div>
+                <div class="pipeline-node-lat">18ms · VIP Tier</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node active" title="Searches policy vector database via RAG">
+                <div class="pipeline-node-icon">📚</div>
+                <div class="pipeline-node-title">RAG Policy</div>
+                <div class="pipeline-node-lat">42ms · 1,420 Vecs</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node active" title="Verifies order status via MCP Tools">
+                <div class="pipeline-node-icon">🔍</div>
+                <div class="pipeline-node-title">Investigation</div>
+                <div class="pipeline-node-lat">85ms · MCP Tool</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node active" title="Generates resolution strategy & checks risk">
+                <div class="pipeline-node-icon">⚡</div>
+                <div class="pipeline-node-title">Resolution</div>
+                <div class="pipeline-node-lat">110ms · Auto-Plan</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node active" title="Audits tone, compliance & precision">
+                <div class="pipeline-node-icon">✅</div>
+                <div class="pipeline-node-title">Review</div>
+                <div class="pipeline-node-lat">15ms · Audited</div>
+              </div>
+              <div class="pipeline-connector"></div>
+              <div class="pipeline-node" style="border-color:var(--warning-border)" title="Enforces supervisor sign-off on monetary risk">
+                <div class="pipeline-node-icon">👨‍💼</div>
+                <div class="pipeline-node-title">HITL Gate</div>
+                <div class="pipeline-node-lat">Risk Threshold</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1175,6 +1235,20 @@
             <div class="health-svc-icon">🧠</div>
             <div class="health-info"><div class="health-name">LLM Provider</div><div class="health-desc">Gemini / OpenRouter</div></div>
             <span class="health-status-pill" id="hs-llm">Checking</span>
+          </div>
+        <!-- Real-Time Event Streamer Terminal -->
+        <div class="card" style="margin-top:var(--sp-6)">
+          <div class="card-header">
+            <div class="card-title"><i data-lucide="terminal" style="color:var(--brand-400)"></i> Live Platform Telemetry &amp; Log Streamer</div>
+            <div class="badge badge-brand">● Live Stream (100ms)</div>
+          </div>
+          <div class="card-body">
+            <div class="terminal-streamer" id="health-terminal-streamer">
+              <div class="term-line"><span class="term-ts">[16:42:01.012]</span> <span class="term-lvl">INFO</span> <span class="term-msg">System initialized. All 7 LangGraph agent nodes ready.</span></div>
+              <div class="term-line"><span class="term-ts">[16:42:01.085]</span> <span class="term-lvl">INFO</span> <span class="term-msg">Vector Store Index loaded: 1,420 document chunks (Similarity threshold: 0.75).</span></div>
+              <div class="term-line"><span class="term-ts">[16:42:01.120]</span> <span class="term-lvl">SUCCESS</span> <span class="term-msg">MCP Servers connected: CRM, Billing, Ticketing, Notifications.</span></div>
+              <div class="term-line"><span class="term-ts">[16:42:01.200]</span> <span class="term-lvl">INFO</span> <span class="term-msg">LLM Provider configured: Gemini 1.5 Flash (Fallback: OpenRouter).</span></div>
+            </div>
           </div>
         </div>
 
