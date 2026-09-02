@@ -8,8 +8,11 @@
  * API Prefix: /api/v1
  */
 
-const API_BASE_URL = 'http://localhost:8000';
-const API_PREFIX   = `${API_BASE_URL}/api/v1`;
+const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+  ? window.location.origin
+  : 'http://localhost:8000';
+
+const API_PREFIX = `${API_BASE_URL}/api/v1`;
 
 // ---------------------------------------------------------------------------
 // Internal fetch wrapper with consistent error handling
@@ -31,19 +34,35 @@ async function apiFetch(url, options = {}, timeoutMs = 60000) {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...(options.headers || {}),
       },
     });
 
     clearTimeout(timerId);
 
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
     if (!response.ok) {
       let detail = `HTTP ${response.status}: ${response.statusText}`;
-      try {
-        const errBody = await response.json();
-        if (errBody.detail) detail = errBody.detail;
-      } catch (_) { /* ignore JSON parse errors on error responses */ }
+      if (isJson) {
+        try {
+          const errBody = await response.json();
+          if (errBody.detail) detail = errBody.detail;
+        } catch (_) {}
+      }
       throw new APIError(detail, response.status);
+    }
+
+    if (!isJson) {
+      // If backend returned HTML instead of JSON, attempt fallback to root endpoint without /api/v1 prefix
+      if (url.includes('/api/v1/')) {
+        const fallbackUrl = url.replace('/api/v1/', '/');
+        console.warn(`[apiFetch] Endpoint ${url} returned non-JSON response. Retrying with fallback: ${fallbackUrl}`);
+        return apiFetch(fallbackUrl, options, timeoutMs);
+      }
+      throw new APIError('Server returned unexpected HTML response instead of JSON. Ensure backend is running.', 500);
     }
 
     return await response.json();
@@ -79,7 +98,7 @@ export class APIError extends Error {
  * @returns {Promise<{status: string, platform: string, version: string, uptime_seconds: number, total_sessions: number}>}
  */
 export async function getHealth() {
-  return apiFetch(`${API_BASE_URL}/health`, {}, 5000);
+  return apiFetch(`${API_PREFIX}/health`, {}, 5000);
 }
 
 // ---------------------------------------------------------------------------
@@ -194,84 +213,3 @@ export async function getKnowledgeStatus() {
 export async function runDemoE2E() {
   return apiFetch(`${API_PREFIX}/demo/run-e2e`, {}, 120000);
 }
-
-// ---------------------------------------------------------------------------
-// JSDoc type stubs (for IDE hints only — no runtime effect)
-// ---------------------------------------------------------------------------
-
-/**
- * @typedef {{
- *   session_id: string,
- *   ticket_id: string,
- *   response: string,
- *   intent: string,
- *   priority: string,
- *   risk_level: string,
- *   requires_approval: boolean,
- *   approval_status: string,
- *   workflow_complete: boolean,
- *   latency_ms: number,
- *   agents_completed: string[]
- * }} ChatResponse
- */
-
-/**
- * @typedef {{
- *   session_id: string,
- *   ticket_id: string,
- *   intent: string,
- *   priority: string,
- *   risk_level: string,
- *   customer_profile: { customer_id: string, name: string, tier: string },
- *   investigation_findings: string,
- *   knowledge_summary: string,
- *   proposed_actions: Array<{ type: string, description: string, risk_level: string, requires_approval: boolean, executed: boolean }>,
- *   review_passed: boolean,
- *   compliance_flags: string[],
- *   requires_human_approval: boolean,
- *   approval_status: string,
- *   final_response: string,
- *   workflow_complete: boolean,
- *   execution_trace: Array<{ agent: string, step: string, input: string, output: string, duration_ms: number, timestamp: number, error: string|null }>,
- *   total_latency_ms: number,
- *   agents_completed: string[]
- * }} TicketDetail
- */
-
-/**
- * @typedef {{
- *   session_id: string,
- *   ticket_id: string,
- *   customer_name: string,
- *   intent: string,
- *   risk_level: string,
- *   proposed_actions: Array<{ type: string, amount: number }>,
- *   created_at: number
- * }} PendingApproval
- */
-
-/**
- * @typedef {{
- *   session_id: string,
- *   ticket_id: string,
- *   intent: string,
- *   priority: string,
- *   complete: boolean,
- *   latency_ms: number,
- *   created_at: number
- * }} SessionSummary
- */
-
-/**
- * @typedef {{
- *   total_requests: number,
- *   successful_requests: number,
- *   failed_requests: number,
- *   success_rate: number,
- *   avg_latency_ms: number,
- *   hitl_triggers: number,
- *   refunds_processed: number,
- *   top_intents: Record<string, number>,
- *   uptime_seconds: number
- * }} MetricsResponse
- */
