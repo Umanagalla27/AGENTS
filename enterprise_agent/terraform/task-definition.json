@@ -1,0 +1,31 @@
+{
+  "family": "enterprise-agent",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::949193188298:role/enterprise-agent-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::949193188298:role/enterprise-agent-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "enterprise-agent",
+      "image": "949193188298.dkr.ecr.us-east-1.amazonaws.com/enterprise-agent:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/enterprise-agent",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
