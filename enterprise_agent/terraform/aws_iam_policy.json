@@ -31,7 +31,7 @@
       "Resource": "*"
     },
     {
-      "Sid": "IAMRolesManagement",
+      "Sid": "IAMRolesAndPassRoleManagement",
       "Effect": "Allow",
       "Action": [
         "iam:CreateRole",
